@@ -1,18 +1,51 @@
-from skyfield.api import load
+import requests
+from skyfield.api import EarthSatellite, load
+
 
 def load_satellites(group="stations"):
     """
-    Load satellites from CelesTrak.
-
-    Parameters:
-        group (str): CelesTrak satellite group
+    Download TLE data from CelesTrak and create Skyfield
+    EarthSatellite objects.
 
     Returns:
-        list: Skyfield EarthSatellite objects
+        list: EarthSatellite objects
     """
 
-    url = f"https://celestrak.org/NORAD/elements/gp.php?GROUP={group}&FORMAT=tle"
+    url = (
+        f"https://celestrak.org/NORAD/elements/"
+        f"gp.php?GROUP={group}&FORMAT=tle"
+    )
 
-    satellites = load.tle_file(url)
+    response = requests.get(url, timeout=15)
+    response.raise_for_status()
+
+    lines = [
+        line.strip()
+        for line in response.text.splitlines()
+        if line.strip()
+    ]
+
+    ts = load.timescale()
+
+    satellites = []
+
+    for i in range(0, len(lines), 3):
+
+        name = lines[i]
+        line1 = lines[i + 1]
+        line2 = lines[i + 2]
+
+        satellite = EarthSatellite(
+            line1,
+            line2,
+            name,
+            ts
+        )
+
+        # Preserve original TLE data
+        satellite.tle_line1 = line1
+        satellite.tle_line2 = line2
+
+        satellites.append(satellite)
 
     return satellites
