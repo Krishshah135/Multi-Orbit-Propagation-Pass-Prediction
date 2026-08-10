@@ -1,6 +1,9 @@
+import numpy as np
 from src.tle_loader import load_satellites
 from src.orbit_analysis import analyze_orbit
-
+from skyfield.api import load
+from src.visualization import plot_ground_track , plot_ground_track_map
+from src.ground_track import satellite_latlon , generate_ground_track
 
 # Load satellite data from CelesTrak
 satellites = load_satellites()
@@ -117,3 +120,65 @@ print(
 
 
 print("=" * 60)
+ts = load.timescale()
+
+t = ts.now()
+
+latitude, longitude, altitude = satellite_latlon(
+    iss,
+    t
+)
+
+print("\nCURRENT GROUND POSITION")
+print("-" * 60)
+
+print(f"Latitude  : {latitude:.4f}°")
+print(f"Longitude : {longitude:.4f}°")
+print(f"Altitude  : {altitude:.2f} km")
+
+ts = load.timescale()
+
+start_time = ts.now()
+
+period_minutes = analysis["period_minutes"]
+
+time_minutes = np.linspace(
+    0,
+    period_minutes,
+    500
+)
+
+times = ts.utc(
+    start_time.utc_datetime().year,
+    start_time.utc_datetime().month,
+    start_time.utc_datetime().day,
+    start_time.utc_datetime().hour,
+    start_time.utc_datetime().minute,
+    start_time.utc_datetime().second
+    + time_minutes * 60
+)
+# Generate ground track
+latitudes, longitudes, altitudes = generate_ground_track(
+    iss,
+    times
+)
+
+
+# Display some ground-track points
+print("\nGROUND TRACK SAMPLE")
+print("-" * 60)
+
+for i in range(0, 500, 50):
+    print(
+        f"Lat: {latitudes[i]:8.3f}°   "
+        f"Lon: {longitudes[i]:9.3f}°   "
+        f"Alt: {altitudes[i]:8.2f} km"
+    )
+plot_ground_track(
+    latitudes,
+    longitudes
+)   
+plot_ground_track_map(
+    latitudes,
+    longitudes
+)
