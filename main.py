@@ -1,21 +1,20 @@
 import numpy as np
-from src.tle_loader import load_satellites
+from src.tle_loader import load_satellite_from_file
 from src.orbit_analysis import analyze_orbit
 from skyfield.api import load
 from src.visualization import plot_ground_track , plot_ground_track_map
 from src.ground_track import satellite_latlon , generate_ground_track
-
+from src.ground_station import (
+    create_ground_station,
+    observe_satellite
+)
 # Load satellite data from CelesTrak
-satellites = load_satellites()
-
-
-# Find the ISS
-iss = next(
-    satellite
-    for satellite in satellites
-    if satellite.name == "ISS (ZARYA)"
+satellites = load_satellite_from_file(
+    "data/tle/iss.txt"
 )
 
+
+iss = satellites[0]
 
 # Perform orbital analysis
 analysis = analyze_orbit(iss)
@@ -181,4 +180,44 @@ plot_ground_track(
 plot_ground_track_map(
     latitudes,
     longitudes
+)
+ts = load.timescale()
+# Test ground station: Chennai
+station_latitude = 13.0827
+station_longitude = 80.2707
+station_elevation = 0.0
+
+station = create_ground_station(
+    station_latitude,
+    station_longitude,
+    station_elevation
+)
+observation_time = ts.now()
+observation = observe_satellite(
+    iss,
+    observation_time,
+    station,
+    station_latitude,
+    station_longitude
+)
+print("\nGROUND STATION OBSERVATION")
+print("-" * 60)
+
+print(
+    f"Ground Station     : Chennai"
+)
+
+print(
+    f"Range              : "
+    f"{observation['range_km']:.2f} km"
+)
+
+print(
+    f"Azimuth            : "
+    f"{observation['azimuth_deg']:.2f}°"
+)
+
+print(
+    f"Elevation          : "
+    f"{observation['elevation_deg']:.2f}°"
 )

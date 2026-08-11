@@ -16,7 +16,7 @@ def load_satellites(group="stations"):
         f"gp.php?GROUP={group}&FORMAT=tle"
     )
 
-    response = requests.get(url, timeout=15)
+    response = requests.get(url, timeout=60)
     response.raise_for_status()
 
     lines = [
@@ -43,6 +43,48 @@ def load_satellites(group="stations"):
         )
 
         # Preserve original TLE data
+        satellite.tle_line1 = line1
+        satellite.tle_line2 = line2
+
+        satellites.append(satellite)
+
+    return satellites
+def load_satellite_from_file(filepath):
+    """
+    Load satellites from a local 3-line TLE file.
+
+    Expected format:
+
+        Satellite Name
+        TLE Line 1
+        TLE Line 2
+    """
+
+    with open(filepath, "r") as file:
+        lines = [
+            line.strip()
+            for line in file
+            if line.strip()
+        ]
+
+    ts = load.timescale()
+
+    satellites = []
+
+    for i in range(0, len(lines), 3):
+
+        name = lines[i]
+        line1 = lines[i + 1]
+        line2 = lines[i + 2]
+
+        satellite = EarthSatellite(
+            line1,
+            line2,
+            name,
+            ts
+        )
+
+        # Preserve the original TLE
         satellite.tle_line1 = line1
         satellite.tle_line2 = line2
 
