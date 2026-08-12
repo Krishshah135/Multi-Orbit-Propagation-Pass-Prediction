@@ -284,3 +284,35 @@ def observe_satellite(
         "azimuth_deg": azimuth_deg,
         "elevation_deg": elevation_deg
     }
+def validate_with_skyfield(
+    satellite,
+    time,
+    station
+):
+    """
+    Calculate satellite observation parameters
+    using Skyfield's built-in altaz() method.
+
+    This is used only as an independent
+    validation reference.
+    """
+
+    # Calculate satellite position relative
+    # to the ground station
+
+    difference = satellite - station
+
+    topocentric = difference.at(time)
+
+    # Convert directly to altitude,
+    # azimuth and distance
+
+    altitude, azimuth, distance = (
+        topocentric.altaz()
+    )
+
+    return {
+        "range_km": distance.km,
+        "azimuth_deg": azimuth.degrees,
+        "elevation_deg": altitude.degrees
+    }

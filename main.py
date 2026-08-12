@@ -6,7 +6,14 @@ from src.visualization import plot_ground_track , plot_ground_track_map
 from src.ground_track import satellite_latlon , generate_ground_track
 from src.ground_station import (
     create_ground_station,
-    observe_satellite
+    observe_satellite,
+     validate_with_skyfield
+)
+from src.pass_prediction import (
+    generate_prediction_times,
+    calculate_elevation_profile,
+    find_visibility_intervals,
+    find_max_elevation
 )
 # Load satellite data from CelesTrak
 satellites = load_satellite_from_file(
@@ -221,3 +228,153 @@ print(
     f"Elevation          : "
     f"{observation['elevation_deg']:.2f}°"
 )
+
+skyfield_observation = validate_with_skyfield(
+    iss,
+    observation_time,
+    station
+)
+
+print("\nVALIDATION")
+print("-" * 60)
+
+print(
+    f"Our Range       : "
+    f"{observation['range_km']:.3f} km"
+)
+
+print(
+    f"Skyfield Range  : "
+    f"{skyfield_observation['range_km']:.3f} km"
+)
+
+print()
+
+print(
+    f"Our Azimuth     : "
+    f"{observation['azimuth_deg']:.3f}°"
+)
+
+print(
+    f"Skyfield Azimuth: "
+    f"{skyfield_observation['azimuth_deg']:.3f}°"
+)
+
+print()
+
+print(
+    f"Our Elevation   : "
+    f"{observation['elevation_deg']:.3f}°"
+)
+
+print(
+    f"Skyfield Elev.  : "
+    f"{skyfield_observation['elevation_deg']:.3f}°"
+)
+
+# Generate prediction times
+prediction_times = generate_prediction_times(
+    ts,
+    observation_time,
+    duration_minutes=180,
+    step_seconds=10
+)
+
+# Calculate elevation profile
+elevations = calculate_elevation_profile(
+    iss,
+    station,
+    prediction_times,
+    station_latitude,
+    station_longitude
+)
+# Find visibility intervals
+visibility_intervals = find_visibility_intervals(
+    prediction_times,
+    elevations,
+    elevation_mask_deg=0.0
+)
+print("\nPASS PREDICTION")
+print("-" * 60)
+
+print(
+    f"Prediction window : 180 minutes"
+)
+
+print(
+    f"Elevation mask    : 0.0°"
+)
+
+print(
+    f"Passes detected   : "
+    f"{len(visibility_intervals)}"
+)
+
+for pass_number, (
+    start_index,
+    end_index
+) in enumerate(
+    visibility_intervals,
+    start=1
+):
+
+    max_elevation, max_index = (
+        find_max_elevation(
+            elevations[
+                start_index:end_index + 1
+            ]
+        )
+    )
+
+    max_index = (
+        start_index + max_index
+    )
+
+    aos_time = prediction_times[
+        start_index
+    ]
+
+    los_time = prediction_times[
+        end_index
+    ]
+
+    max_elevation_time = prediction_times[
+        max_index
+    ]
+
+    duration_seconds = (
+        end_index - start_index
+    ) * 10
+
+    duration_minutes = (
+        duration_seconds / 60
+    )
+
+    print(
+        f"\nPASS #{pass_number}"
+    )
+
+    print(
+        f"AOS               : "
+        f"{aos_time.utc_strftime('%Y-%m-%d %H:%M:%S UTC')}"
+    )
+
+    print(
+        f"Maximum Elevation : "
+        f"{max_elevation:.2f}°"
+    )
+
+    print(
+        f"Max Elevation Time: "
+        f"{max_elevation_time.utc_strftime('%Y-%m-%d %H:%M:%S UTC')}"
+    )
+
+    print(
+        f"LOS               : "
+        f"{los_time.utc_strftime('%Y-%m-%d %H:%M:%S UTC')}"
+    )
+
+    print(
+        f"Duration          : "
+        f"{duration_minutes:.2f} minutes"
+    )
