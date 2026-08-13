@@ -167,3 +167,308 @@ def find_max_elevation(
         max_elevation,
         max_index
     )
+
+def refine_crossing_time(
+    ts,
+    time_before,
+    time_after,
+    elevation_before,
+    elevation_after,
+    elevation_mask_deg=0.0
+):
+    """
+    Refine the time at which the satellite
+    crosses the elevation mask.
+
+    Uses linear interpolation between two
+    surrounding elevation samples.
+
+    Returns:
+        Skyfield Time object representing
+        the estimated crossing time.
+    """
+
+    denominator = (
+        elevation_after
+        - elevation_before
+    )
+
+    # Prevent division by zero
+    if denominator == 0:
+        return time_before
+
+    fraction = (
+        elevation_mask_deg
+        - elevation_before
+    ) / denominator
+
+    # Keep interpolation inside the interval
+    fraction = np.clip(
+        fraction,
+        0.0,
+        1.0
+    )
+
+    crossing_tt = (
+        time_before.tt
+        + fraction
+        * (
+            time_after.tt
+            - time_before.tt
+        )
+    )
+
+    return ts.tt_jd(crossing_tt)
+
+def refine_pass_times(
+    ts,
+    times,
+    elevations,
+    start_index,
+    end_index,
+    elevation_mask_deg=0.0
+):
+    """
+    Refine AOS and LOS times for one
+    visibility interval.
+
+    Returns:
+        aos_time
+        los_time
+    """
+
+    # --------------------------------------------------
+    # AOS
+    # --------------------------------------------------
+
+    if start_index == 0:
+
+        aos_time = times[0]
+
+    else:
+
+        aos_time = refine_crossing_time(
+            ts,
+            times[start_index - 1],
+            times[start_index],
+            elevations[start_index - 1],
+            elevations[start_index],
+            elevation_mask_deg
+        )
+
+
+    # --------------------------------------------------
+    # LOS
+    # --------------------------------------------------
+
+    if end_index == len(times) - 1:
+
+        los_time = times[-1]
+
+    else:
+
+        los_time = refine_crossing_time(
+            ts,
+            times[end_index],
+            times[end_index + 1],
+            elevations[end_index],
+            elevations[end_index + 1],
+            elevation_mask_deg
+        )
+
+
+    return (
+        aos_time,
+        los_time
+    )
+
+def refine_max_elevation(
+    ts,
+    satellite,
+    station,
+    latitude_deg,
+    longitude_deg,
+    times,
+    elevations,
+    start_index,
+    end_index
+):
+    """
+    Refine the maximum elevation of a satellite pass.
+
+    The initial maximum is found from the sampled
+    elevation profile. A quadratic interpolation
+    around that maximum is then used to estimate
+    the true peak time.
+
+    Returns:
+        refined_max_elevation_deg
+        refined_max_time
+    """
+
+    from src.ground_station import (
+        observe_satellite
+    )
+
+    # --------------------------------------------------
+    # 1. Find the sampled maximum
+    # --------------------------------------------------
+
+    pass_elevations = elevations[
+        start_index:end_index + 1
+    ]
+
+    local_max_index = np.argmax(
+        pass_elevations
+    )
+
+    max_index = (
+        start_index
+        + local_max_index
+    )
+
+
+    # --------------------------------------------------
+    # 2. Check whether the maximum is at
+    #    the edge of the prediction interval
+    # --------------------------------------------------
+
+    if (
+        max_index == start_index
+        or max_index == end_index
+        or max_index == 0
+        or max_index == len(elevations) - 1
+    ):
+
+        max_time = times[max_index]
+
+        observation = observe_satellite(
+            satellite,
+            max_time,
+            station,
+            latitude_deg,
+            longitude_deg
+        )
+
+        return (
+            observation["elevation_deg"],
+            max_time
+        )
+
+
+    # --------------------------------------------------
+    # 3. Get the three points around the maximum
+    # --------------------------------------------------
+
+    previous_index = max_index - 1
+    next_index = max_index + 1
+
+    y1 = elevations[previous_index]
+    y2 = elevations[max_index]
+    y3 = elevations[next_index]
+
+
+    # --------------------------------------------------
+    # 4. Calculate the sampling interval
+    # --------------------------------------------------
+
+    t1 = times[previous_index]
+    t2 = times[max_index]
+    t3 = times[next_index]
+
+    step_seconds = (
+        t3.tt - t2.tt
+    ) * 86400.0
+
+
+    # --------------------------------------------------
+    # 5. Quadratic interpolation
+    #
+    #        y
+    #        ▲
+    #        │       ●
+    #        │     /   \
+    #        │   ●       ●
+    #        └────────────────→ time
+    # --------------------------------------------------
+
+    denominator = (
+        y1
+        - 2.0 * y2
+        + y3
+    )
+
+
+    # Prevent division by zero
+    if abs(denominator) < 1e-12:
+
+        max_time = t2
+
+        observation = observe_satellite(
+            satellite,
+            max_time,
+            station,
+            latitude_deg,
+            longitude_deg
+        )
+
+        return (
+            observation["elevation_deg"],
+            max_time
+        )
+
+
+    offset_seconds = (
+        0.5
+        * step_seconds
+        * (y1 - y3)
+        / denominator
+    )
+
+
+    # Keep the refined point between
+    # the surrounding samples
+
+    offset_seconds = np.clip(
+        offset_seconds,
+        -step_seconds,
+        step_seconds
+    )
+
+
+    # --------------------------------------------------
+    # 6. Convert refined offset into Skyfield time
+    # --------------------------------------------------
+
+    refined_tt = (
+        t2.tt
+        + offset_seconds / 86400.0
+    )
+
+    refined_time = ts.tt_jd(
+        refined_tt
+    )
+
+
+    # --------------------------------------------------
+    # 7. Calculate actual elevation at
+    #    the refined time
+    # --------------------------------------------------
+
+    observation = observe_satellite(
+        satellite,
+        refined_time,
+        station,
+        latitude_deg,
+        longitude_deg
+    )
+
+    refined_elevation = (
+        observation["elevation_deg"]
+    )
+
+
+    return (
+        refined_elevation,
+        refined_time
+    )

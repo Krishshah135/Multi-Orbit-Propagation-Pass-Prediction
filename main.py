@@ -13,7 +13,9 @@ from src.pass_prediction import (
     generate_prediction_times,
     calculate_elevation_profile,
     find_visibility_intervals,
-    find_max_elevation
+    find_max_elevation,
+    refine_pass_times,
+    refine_max_elevation
 )
 # Load satellite data from CelesTrak
 satellites = load_satellite_from_file(
@@ -289,11 +291,16 @@ elevations = calculate_elevation_profile(
     station_longitude
 )
 # Find visibility intervals
+
+elevation_mask_deg = 10.0
+
 visibility_intervals = find_visibility_intervals(
     prediction_times,
     elevations,
-    elevation_mask_deg=0.0
+    elevation_mask_deg=elevation_mask_deg
 )
+
+
 print("\nPASS PREDICTION")
 print("-" * 60)
 
@@ -318,29 +325,27 @@ for pass_number, (
     start=1
 ):
 
-    max_elevation, max_index = (
-        find_max_elevation(
-            elevations[
-                start_index:end_index + 1
-            ]
+    max_elevation, max_elevation_time = (
+        refine_max_elevation(
+            ts,
+            iss,
+            station,
+            station_latitude,
+            station_longitude,
+            prediction_times,
+            elevations,
+            start_index,
+            end_index
         )
     )
-
-    max_index = (
-        start_index + max_index
+    aos_time, los_time = refine_pass_times(
+        ts,
+        prediction_times,
+        elevations,
+        start_index,
+        end_index,
+        elevation_mask_deg
     )
-
-    aos_time = prediction_times[
-        start_index
-    ]
-
-    los_time = prediction_times[
-        end_index
-    ]
-
-    max_elevation_time = prediction_times[
-        max_index
-    ]
 
     duration_seconds = (
         end_index - start_index
