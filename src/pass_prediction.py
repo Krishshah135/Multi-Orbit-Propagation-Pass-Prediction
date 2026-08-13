@@ -1,5 +1,24 @@
 import numpy as np
+from dataclasses import dataclass
 
+@dataclass
+class PassResult:
+    """
+    Stores all important information
+    about one satellite pass.
+    """
+
+    satellite_name: str
+
+    aos_time: object
+    los_time: object
+
+    max_elevation_deg: float
+    max_elevation_time: object
+
+    duration_minutes: float
+
+    elevation_mask_deg: float
 
 def calculate_elevation_profile(
     satellite,
@@ -472,3 +491,261 @@ def refine_max_elevation(
         refined_elevation,
         refined_time
     )
+
+def build_pass_results(
+    ts,
+    satellite,
+    station,
+    latitude_deg,
+    longitude_deg,
+    times,
+    elevations,
+    visibility_intervals,
+    elevation_mask_deg
+):
+    """
+    Convert detected visibility intervals
+    into structured PassResult objects.
+    """
+
+    pass_results = []
+
+    for start_index, end_index in visibility_intervals:
+
+        # ----------------------------------------------
+        # Refine AOS and LOS
+        # ----------------------------------------------
+
+        aos_time, los_time = refine_pass_times(
+            ts,
+            times,
+            elevations,
+            start_index,
+            end_index,
+            elevation_mask_deg
+        )
+
+        # ----------------------------------------------
+        # Refine maximum elevation
+        # ----------------------------------------------
+
+        max_elevation, max_elevation_time = (
+            refine_max_elevation(
+                ts,
+                satellite,
+                station,
+                latitude_deg,
+                longitude_deg,
+                times,
+                elevations,
+                start_index,
+                end_index
+            )
+        )
+
+        # ----------------------------------------------
+        # Calculate actual duration
+        # ----------------------------------------------
+
+        duration_seconds = (
+            los_time.tt
+            - aos_time.tt
+        ) * 86400.0
+
+        duration_minutes = (
+            duration_seconds / 60.0
+        )
+
+        # ----------------------------------------------
+        # Create PassResult
+        # ----------------------------------------------
+
+        result = PassResult(
+            satellite_name=satellite.name,
+            aos_time=aos_time,
+            los_time=los_time,
+            max_elevation_deg=max_elevation,
+            max_elevation_time=max_elevation_time,
+            duration_minutes=duration_minutes,
+            elevation_mask_deg=elevation_mask_deg
+        )
+
+        pass_results.append(result)
+
+    return pass_results
+
+def print_pass_summary(pass_results):
+    """
+    Print a clean summary table
+    of predicted satellite passes.
+    """
+
+    print("\nPASS SUMMARY")
+    print("=" * 120)
+
+    print(
+        f"{'PASS':<6}"
+        f"{'AOS':<22}"
+        f"{'MAX EL':<12}"
+        f"{'MAX TIME':<22}"
+        f"{'LOS':<22}"
+        f"{'DURATION':<12}"
+    )
+
+    print("-" * 120)
+
+    for index, result in enumerate(
+        pass_results,
+        start=1
+    ):
+
+        aos = result.aos_time.utc_strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+        max_time = (
+            result.max_elevation_time.utc_strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+        )
+
+        los = result.los_time.utc_strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+        print(
+            f"{index:<6}"
+            f"{aos:<22}"
+            f"{result.max_elevation_deg:<12.2f}"
+            f"{max_time:<22}"
+            f"{los:<22}"
+            f"{result.duration_minutes:<12.2f}"
+        )
+
+    print("=" * 120)
+
+def plot_elevation_profile(
+    times,
+    elevations,
+    pass_results,
+    elevation_mask_deg=0.0
+):
+    """
+    Plot satellite elevation versus time
+    and mark AOS, maximum elevation,
+    and LOS for each predicted pass.
+    """
+
+    import matplotlib.pyplot as plt
+
+    datetime_values = [
+        time.utc_datetime()
+        for time in times
+    ]
+
+    plt.figure(figsize=(14, 6))
+
+    # --------------------------------------------------
+    # Elevation profile
+    # --------------------------------------------------
+
+    plt.plot(
+        datetime_values,
+        elevations,
+        label="Satellite Elevation"
+    )
+
+    # --------------------------------------------------
+    # Elevation mask
+    # --------------------------------------------------
+
+    plt.axhline(
+        elevation_mask_deg,
+        linestyle="--",
+        label=(
+            f"Elevation Mask "
+            f"({elevation_mask_deg:.1f}°)"
+        )
+    )
+
+    # --------------------------------------------------
+    # Mark AOS, MAX and LOS
+    # --------------------------------------------------
+
+    for index, result in enumerate(
+        pass_results,
+        start=1
+    ):
+
+        aos_datetime = (
+            result.aos_time.utc_datetime()
+        )
+
+        max_datetime = (
+            result.max_elevation_time.utc_datetime()
+        )
+
+        los_datetime = (
+            result.los_time.utc_datetime()
+        )
+
+        # AOS
+
+        plt.scatter(
+            aos_datetime,
+            elevation_mask_deg,
+            marker="o",
+            s=60,
+            label=f"Pass {index} AOS"
+        )
+
+        # Maximum elevation
+
+        plt.scatter(
+            max_datetime,
+            result.max_elevation_deg,
+            marker="^",
+            s=80,
+            label=f"Pass {index} MAX"
+        )
+
+        # LOS
+
+        plt.scatter(
+            los_datetime,
+            elevation_mask_deg,
+            marker="s",
+            s=60,
+            label=f"Pass {index} LOS"
+        )
+
+    # --------------------------------------------------
+    # Plot labels
+    # --------------------------------------------------
+
+    plt.xlabel(
+        "Time (UTC)"
+    )
+
+    plt.ylabel(
+        "Elevation (degrees)"
+    )
+
+    plt.title(
+        "ISS Elevation Profile and Pass Events"
+    )
+
+    plt.grid(
+        True,
+        alpha=0.3
+    )
+
+    plt.legend()
+
+    plt.xticks(
+        rotation=30
+    )
+
+    plt.tight_layout()
+
+    plt.show()

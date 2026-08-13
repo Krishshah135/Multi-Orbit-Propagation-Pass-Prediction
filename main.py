@@ -15,7 +15,10 @@ from src.pass_prediction import (
     find_visibility_intervals,
     find_max_elevation,
     refine_pass_times,
-    refine_max_elevation
+    refine_max_elevation,
+    build_pass_results,
+    print_pass_summary,
+    plot_elevation_profile
 )
 # Load satellite data from CelesTrak
 satellites = load_satellite_from_file(
@@ -317,69 +320,62 @@ print(
     f"{len(visibility_intervals)}"
 )
 
-for pass_number, (
-    start_index,
-    end_index
-) in enumerate(
+# --------------------------------------------------
+# BUILD STRUCTURED PASS RESULTS
+# --------------------------------------------------
+
+pass_results = build_pass_results(
+    ts,
+    iss,
+    station,
+    station_latitude,
+    station_longitude,
+    prediction_times,
+    elevations,
     visibility_intervals,
-    start=1
-):
+    elevation_mask_deg
+)
 
-    max_elevation, max_elevation_time = (
-        refine_max_elevation(
-            ts,
-            iss,
-            station,
-            station_latitude,
-            station_longitude,
-            prediction_times,
-            elevations,
-            start_index,
-            end_index
-        )
-    )
-    aos_time, los_time = refine_pass_times(
-        ts,
-        prediction_times,
-        elevations,
-        start_index,
-        end_index,
-        elevation_mask_deg
-    )
 
-    duration_seconds = (
-        end_index - start_index
-    ) * 10
+# --------------------------------------------------
+# PASS PREDICTION SUMMARY
+# --------------------------------------------------
 
-    duration_minutes = (
-        duration_seconds / 60
-    )
+print("\nPASS PREDICTION")
+print("-" * 60)
 
-    print(
-        f"\nPASS #{pass_number}"
-    )
+print(
+    f"Prediction window : "
+    f"180 minutes"
+)
 
-    print(
-        f"AOS               : "
-        f"{aos_time.utc_strftime('%Y-%m-%d %H:%M:%S UTC')}"
-    )
+print(
+    f"Elevation mask    : "
+    f"{elevation_mask_deg:.1f}°"
+)
 
-    print(
-        f"Maximum Elevation : "
-        f"{max_elevation:.2f}°"
-    )
+print(
+    f"Passes detected   : "
+    f"{len(pass_results)}"
+)
 
-    print(
-        f"Max Elevation Time: "
-        f"{max_elevation_time.utc_strftime('%Y-%m-%d %H:%M:%S UTC')}"
-    )
 
-    print(
-        f"LOS               : "
-        f"{los_time.utc_strftime('%Y-%m-%d %H:%M:%S UTC')}"
-    )
+# --------------------------------------------------
+# PRINT PASS TABLE
+# --------------------------------------------------
 
-    print(
-        f"Duration          : "
-        f"{duration_minutes:.2f} minutes"
-    )
+print_pass_summary(
+    pass_results
+)
+
+
+# --------------------------------------------------
+# PLOT ELEVATION PROFILE
+# --------------------------------------------------
+
+plot_elevation_profile(
+    prediction_times,
+    elevations,
+    pass_results,
+    elevation_mask_deg
+)
