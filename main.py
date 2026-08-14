@@ -18,7 +18,8 @@ from src.pass_prediction import (
     refine_max_elevation,
     build_pass_results,
     print_pass_summary,
-    plot_elevation_profile
+    plot_elevation_profile,
+    export_passes_to_csv
 )
 # Load satellite data from CelesTrak
 satellites = load_satellite_from_file(
@@ -197,6 +198,7 @@ ts = load.timescale()
 # Test ground station: Chennai
 station_latitude = 13.0827
 station_longitude = 80.2707
+station_name = "Chennai"
 station_elevation = 0.0
 
 station = create_ground_station(
@@ -281,7 +283,7 @@ print(
 prediction_times = generate_prediction_times(
     ts,
     observation_time,
-    duration_minutes=180,
+    duration_minutes=720,
     step_seconds=10
 )
 
@@ -304,21 +306,7 @@ visibility_intervals = find_visibility_intervals(
 )
 
 
-print("\nPASS PREDICTION")
-print("-" * 60)
 
-print(
-    f"Prediction window : 180 minutes"
-)
-
-print(
-    f"Elevation mask    : 0.0°"
-)
-
-print(
-    f"Passes detected   : "
-    f"{len(visibility_intervals)}"
-)
 
 # --------------------------------------------------
 # BUILD STRUCTURED PASS RESULTS
@@ -338,9 +326,6 @@ pass_results = build_pass_results(
 
 
 # --------------------------------------------------
-# PASS PREDICTION SUMMARY
-# --------------------------------------------------
-
 print("\nPASS PREDICTION")
 print("-" * 60)
 
@@ -379,3 +364,49 @@ plot_elevation_profile(
     pass_results,
     elevation_mask_deg
 )
+
+# --------------------------------------------------
+# EXPORT PASS SCHEDULE
+# --------------------------------------------------
+
+export_passes_to_csv(
+    pass_results,
+    "output/pass_schedule.csv",
+    iss.name,
+    station_name,
+    station_latitude,
+    station_longitude,
+    observation_time,
+    180,
+    iss.epoch
+)
+
+print("\n" + "=" * 60)
+print("PASS SCHEDULE EXPORT")
+print("=" * 60)
+
+print(
+    f"Satellite       : {iss.name}"
+)
+
+print(
+    f"Ground Station  : {station_name}"
+)
+
+print(
+    f"Prediction Window: 180 minutes"
+)
+
+print(
+    f"Elevation Mask   : {elevation_mask_deg:.1f}°"
+)
+
+print(
+    f"Passes Detected  : {len(pass_results)}"
+)
+
+print(
+    "CSV File         : output/pass_schedule.csv"
+)
+
+print("=" * 60)

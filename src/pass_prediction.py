@@ -749,3 +749,123 @@ def plot_elevation_profile(
     plt.tight_layout()
 
     plt.show()
+
+def export_passes_to_csv(
+    pass_results,
+    filename,
+    satellite_name,
+    station_name,
+    station_latitude_deg,
+    station_longitude_deg,
+    prediction_start_time,
+    prediction_window_minutes,
+    tle_epoch
+):
+    """
+    Export predicted satellite passes
+    and prediction metadata to a CSV file.
+    """
+
+    import csv
+    import os
+
+    # --------------------------------------------------
+    # Make sure the output directory exists
+    # --------------------------------------------------
+
+    output_directory = os.path.dirname(filename)
+
+    if output_directory:
+        os.makedirs(
+            output_directory,
+            exist_ok=True
+        )
+
+    # --------------------------------------------------
+    # Open CSV file
+    # --------------------------------------------------
+
+    with open(
+        filename,
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as file:
+
+        writer = csv.writer(file)
+
+        # --------------------------------------------------
+        # CSV header
+        # --------------------------------------------------
+
+        writer.writerow([
+            "Satellite",
+            "Ground Station",
+            "Station Latitude (deg)",
+            "Station Longitude (deg)",
+            "Prediction Start (UTC)",
+            "Prediction Window (min)",
+            "TLE Epoch (UTC)",
+            "AOS (UTC)",
+            "Maximum Elevation (deg)",
+            "Maximum Elevation Time (UTC)",
+            "LOS (UTC)",
+            "Duration (min)",
+            "Elevation Mask (deg)"
+        ])
+
+        # --------------------------------------------------
+        # Write pass data
+        # --------------------------------------------------
+
+        for result in pass_results:
+
+            aos = result.aos_time.utc_strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+
+            max_time = (
+                result.max_elevation_time.utc_strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            )
+
+            los = result.los_time.utc_strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+
+            prediction_start = (
+                prediction_start_time.utc_strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            )
+
+            tle_epoch_string = (
+                tle_epoch.utc_strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            )
+
+            writer.writerow([
+                satellite_name,
+                station_name,
+                f"{station_latitude_deg:.6f}",
+                f"{station_longitude_deg:.6f}",
+                prediction_start,
+                prediction_window_minutes,
+                tle_epoch_string,
+                aos,
+                f"{result.max_elevation_deg:.2f}",
+                max_time,
+                los,
+                f"{result.duration_minutes:.2f}",
+                f"{result.elevation_mask_deg:.2f}"
+            ])
+
+    print(
+        "\nPass schedule exported to:"
+    )
+
+    print(
+        filename
+    )
