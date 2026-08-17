@@ -1,6 +1,6 @@
 import requests
 from skyfield.api import EarthSatellite, load
-
+from skyfield.api import load
 
 def load_satellites(group="stations"):
     """
@@ -91,3 +91,26 @@ def load_satellite_from_file(filepath):
         satellites.append(satellite)
 
     return satellites
+
+def load_satellite_from_tle(filename):
+    """
+    Load a satellite from a local TLE file.
+
+    The TLE file must contain:
+
+    Line 1
+    Line 2
+
+    optionally preceded by a satellite name.
+    """
+
+    satellites = load.tle_file(
+        filename
+    )
+
+    if not satellites:
+        raise ValueError(
+            f"No satellites found in {filename}"
+        )
+
+    return satellites[0]

@@ -1,14 +1,31 @@
 import numpy as np
-from src.tle_loader import load_satellite_from_file
+
+from src.satellite_catalog import (
+    load_satellite_catalog,
+    print_satellite_catalog,
+    select_satellite
+)
+
 from src.orbit_analysis import analyze_orbit
+
 from skyfield.api import load
-from src.visualization import plot_ground_track , plot_ground_track_map
-from src.ground_track import satellite_latlon , generate_ground_track
+
+from src.visualization import (
+    plot_ground_track,
+    plot_ground_track_map
+)
+
+from src.ground_track import (
+    satellite_latlon,
+    generate_ground_track
+)
+
 from src.ground_station import (
     create_ground_station,
     observe_satellite,
-     validate_with_skyfield
+    validate_with_skyfield
 )
+
 from src.pass_prediction import (
     generate_prediction_times,
     calculate_elevation_profile,
@@ -21,52 +38,104 @@ from src.pass_prediction import (
     plot_elevation_profile,
     export_passes_to_csv
 )
-# Load satellite data from CelesTrak
-satellites = load_satellite_from_file(
-    "data/tle/iss.txt"
+
+# ============================================================
+# SATELLITE CONFIGURATION
+# ============================================================
+
+SELECTED_SATELLITE = 1
+
+
+# ============================================================
+# SATELLITE CATALOG
+# ============================================================
+
+catalog = load_satellite_catalog(
+    "data/tle"
 )
 
 
-iss = satellites[0]
+# ============================================================
+# DISPLAY AVAILABLE SATELLITES
+# ============================================================
 
-# Perform orbital analysis
-analysis = analyze_orbit(iss)
+print_satellite_catalog(
+    catalog
+)
 
 
-# Display results
+# ============================================================
+# SELECT SATELLITE
+# ============================================================
+
+satellite = select_satellite(
+    catalog,
+    SELECTED_SATELLITE
+)
+
+
+# ============================================================
+# ORBITAL ANALYSIS
+# ============================================================
+
+analysis = analyze_orbit(
+    satellite
+)
+
+
+# ============================================================
+# DISPLAY ORBITAL ANALYSIS
+# ============================================================
+
 print("=" * 60)
-print("                 ORBITAL ANALYSIS")
+
+print(
+    "                 ORBITAL ANALYSIS"
+)
+
 print("=" * 60)
 
-print(f"\nSatellite          : {iss.name}")
+
+print(
+    f"\nSatellite          : "
+    f"{satellite.name}"
+)
+
 
 print("\nORBITAL ELEMENTS")
+
 print("-" * 60)
+
 
 print(
     f"Inclination        : "
     f"{analysis['inclination_deg']:.4f}°"
 )
 
+
 print(
     f"RAAN               : "
     f"{analysis['raan_deg']:.4f}°"
 )
+
 
 print(
     f"Eccentricity       : "
     f"{analysis['eccentricity']:.7f}"
 )
 
+
 print(
     f"Argument of Perigee: "
     f"{analysis['argument_of_perigee_deg']:.4f}°"
 )
 
+
 print(
     f"Mean Anomaly       : "
     f"{analysis['mean_anomaly_deg']:.4f}°"
 )
+
 
 print(
     f"Mean Motion        : "
@@ -74,18 +143,26 @@ print(
 )
 
 
+# ============================================================
+# DERIVED ORBITAL PARAMETERS
+# ============================================================
+
 print("\nDERIVED ORBITAL PARAMETERS")
+
 print("-" * 60)
+
 
 print(
     f"Orbital Period     : "
     f"{analysis['period_minutes']:.2f} min"
 )
 
+
 print(
     f"Semi-Major Axis    : "
     f"{analysis['semi_major_axis_km']:.2f} km"
 )
+
 
 print(
     f"Approx. Altitude   : "
@@ -93,23 +170,32 @@ print(
 )
 
 
+# ============================================================
+# PERIGEE / APOGEE
+# ============================================================
+
 print("\nPERIGEE / APOGEE")
+
 print("-" * 60)
+
 
 print(
     f"Perigee Radius     : "
     f"{analysis['perigee_radius_km']:.2f} km"
 )
 
+
 print(
     f"Apogee Radius      : "
     f"{analysis['apogee_radius_km']:.2f} km"
 )
 
+
 print(
     f"Perigee Altitude   : "
     f"{analysis['perigee_altitude_km']:.2f} km"
 )
+
 
 print(
     f"Apogee Altitude    : "
@@ -117,48 +203,90 @@ print(
 )
 
 
+# ============================================================
+# ORBITAL VELOCITY
+# ============================================================
+
 print("\nORBITAL VELOCITY")
+
 print("-" * 60)
+
 
 print(
     f"Perigee Velocity   : "
     f"{analysis['perigee_velocity_km_s']:.4f} km/s"
 )
 
+
 print(
-    f"Apogee Velocity     : "
+    f"Apogee Velocity    : "
     f"{analysis['apogee_velocity_km_s']:.4f} km/s"
 )
 
 
 print("=" * 60)
+
+
+# ============================================================
+# SKYFIELD TIMESCALE
+# ============================================================
+
 ts = load.timescale()
 
-t = ts.now()
+
+# ============================================================
+# CURRENT SATELLITE POSITION
+# ============================================================
+
+observation_time = ts.now()
+
 
 latitude, longitude, altitude = satellite_latlon(
-    iss,
-    t
+    satellite,
+    observation_time
 )
 
+
 print("\nCURRENT GROUND POSITION")
+
 print("-" * 60)
 
-print(f"Latitude  : {latitude:.4f}°")
-print(f"Longitude : {longitude:.4f}°")
-print(f"Altitude  : {altitude:.2f} km")
 
-ts = load.timescale()
+print(
+    f"Latitude  : "
+    f"{latitude:.4f}°"
+)
 
-start_time = ts.now()
 
-period_minutes = analysis["period_minutes"]
+print(
+    f"Longitude : "
+    f"{longitude:.4f}°"
+)
+
+
+print(
+    f"Altitude  : "
+    f"{altitude:.2f} km"
+)
+
+
+# ============================================================
+# GROUND TRACK CONFIGURATION
+# ============================================================
+
+start_time = observation_time
+
+period_minutes = analysis[
+    "period_minutes"
+]
+
 
 time_minutes = np.linspace(
     0,
     period_minutes,
     500
 )
+
 
 times = ts.utc(
     start_time.utc_datetime().year,
@@ -169,135 +297,217 @@ times = ts.utc(
     start_time.utc_datetime().second
     + time_minutes * 60
 )
-# Generate ground track
-latitudes, longitudes, altitudes = generate_ground_track(
-    iss,
-    times
+
+
+# ============================================================
+# GENERATE GROUND TRACK
+# ============================================================
+
+latitudes, longitudes, altitudes = (
+    generate_ground_track(
+        satellite,
+        times
+    )
 )
 
 
-# Display some ground-track points
+# ============================================================
+# DISPLAY GROUND TRACK SAMPLE
+# ============================================================
+
 print("\nGROUND TRACK SAMPLE")
+
 print("-" * 60)
 
-for i in range(0, 500, 50):
+
+for i in range(
+    0,
+    500,
+    50
+):
+
     print(
         f"Lat: {latitudes[i]:8.3f}°   "
         f"Lon: {longitudes[i]:9.3f}°   "
         f"Alt: {altitudes[i]:8.2f} km"
     )
+
+
+# ============================================================
+# GROUND TRACK PLOTS
+# ============================================================
+
 plot_ground_track(
     latitudes,
     longitudes
-)   
+)
+
+
 plot_ground_track_map(
     latitudes,
     longitudes
 )
-ts = load.timescale()
-# Test ground station: Chennai
-station_latitude = 13.0827
-station_longitude = 80.2707
+
+
+# ============================================================
+# GROUND STATION CONFIGURATION
+# ============================================================
+
 station_name = "Chennai"
+
+station_latitude = 13.0827
+
+station_longitude = 80.2707
+
 station_elevation = 0.0
+
 
 station = create_ground_station(
     station_latitude,
     station_longitude,
     station_elevation
 )
-observation_time = ts.now()
+
+
+# ============================================================
+# CURRENT GROUND STATION OBSERVATION
+# ============================================================
+
 observation = observe_satellite(
-    iss,
+    satellite,
     observation_time,
     station,
     station_latitude,
     station_longitude
 )
+
+
 print("\nGROUND STATION OBSERVATION")
+
 print("-" * 60)
 
+
 print(
-    f"Ground Station     : Chennai"
+    f"Ground Station     : "
+    f"{station_name}"
 )
+
 
 print(
     f"Range              : "
     f"{observation['range_km']:.2f} km"
 )
 
+
 print(
     f"Azimuth            : "
     f"{observation['azimuth_deg']:.2f}°"
 )
+
 
 print(
     f"Elevation          : "
     f"{observation['elevation_deg']:.2f}°"
 )
 
+
+# ============================================================
+# SKYFIELD VALIDATION
+# ============================================================
+
 skyfield_observation = validate_with_skyfield(
-    iss,
+    satellite,
     observation_time,
     station
 )
 
+
 print("\nVALIDATION")
+
 print("-" * 60)
+
 
 print(
     f"Our Range       : "
     f"{observation['range_km']:.3f} km"
 )
 
+
 print(
     f"Skyfield Range  : "
     f"{skyfield_observation['range_km']:.3f} km"
 )
 
+
 print()
+
 
 print(
     f"Our Azimuth     : "
     f"{observation['azimuth_deg']:.3f}°"
 )
 
+
 print(
     f"Skyfield Azimuth: "
     f"{skyfield_observation['azimuth_deg']:.3f}°"
 )
 
+
 print()
+
 
 print(
     f"Our Elevation   : "
     f"{observation['elevation_deg']:.3f}°"
 )
 
+
 print(
     f"Skyfield Elev.  : "
     f"{skyfield_observation['elevation_deg']:.3f}°"
 )
 
-# Generate prediction times
+
+# ============================================================
+# PASS PREDICTION CONFIGURATION
+# ============================================================
+
+prediction_window_minutes = 720
+
+prediction_step_seconds = 10
+
+elevation_mask_deg = 10.0
+
+
+# ============================================================
+# GENERATE PREDICTION TIMES
+# ============================================================
+
 prediction_times = generate_prediction_times(
     ts,
     observation_time,
-    duration_minutes=720,
-    step_seconds=10
+    duration_minutes=prediction_window_minutes,
+    step_seconds=prediction_step_seconds
 )
 
-# Calculate elevation profile
+
+# ============================================================
+# CALCULATE ELEVATION PROFILE
+# ============================================================
+
 elevations = calculate_elevation_profile(
-    iss,
+    satellite,
     station,
     prediction_times,
     station_latitude,
     station_longitude
 )
-# Find visibility intervals
 
-elevation_mask_deg = 10.0
+
+# ============================================================
+# FIND VISIBILITY INTERVALS
+# ============================================================
 
 visibility_intervals = find_visibility_intervals(
     prediction_times,
@@ -306,15 +516,13 @@ visibility_intervals = find_visibility_intervals(
 )
 
 
-
-
-# --------------------------------------------------
+# ============================================================
 # BUILD STRUCTURED PASS RESULTS
-# --------------------------------------------------
+# ============================================================
 
 pass_results = build_pass_results(
     ts,
-    iss,
+    satellite,
     station,
     station_latitude,
     station_longitude,
@@ -325,19 +533,26 @@ pass_results = build_pass_results(
 )
 
 
-# --------------------------------------------------
+# ============================================================
+# PASS PREDICTION SUMMARY
+# ============================================================
+
 print("\nPASS PREDICTION")
+
 print("-" * 60)
+
 
 print(
     f"Prediction window : "
-    f"180 minutes"
+    f"{prediction_window_minutes} minutes"
 )
+
 
 print(
     f"Elevation mask    : "
     f"{elevation_mask_deg:.1f}°"
 )
+
 
 print(
     f"Passes detected   : "
@@ -345,18 +560,87 @@ print(
 )
 
 
-# --------------------------------------------------
-# PRINT PASS TABLE
-# --------------------------------------------------
+# ============================================================
+# PASS TABLE
+# ============================================================
 
 print_pass_summary(
     pass_results
 )
 
 
-# --------------------------------------------------
-# PLOT ELEVATION PROFILE
-# --------------------------------------------------
+# ============================================================
+# EXPORT PASS SCHEDULE
+# ============================================================
+
+export_passes_to_csv(
+    pass_results,
+    "output/pass_schedule.csv",
+    satellite.name,
+    station_name,
+    station_latitude,
+    station_longitude,
+    observation_time,
+    prediction_window_minutes,
+    satellite.epoch
+)
+
+
+# ============================================================
+# EXPORT SUMMARY
+# ============================================================
+
+print("\n" + "=" * 60)
+
+print(
+    "PASS SCHEDULE EXPORT"
+)
+
+print("=" * 60)
+
+
+print(
+    f"Satellite        : "
+    f"{satellite.name}"
+)
+
+
+print(
+    f"Ground Station   : "
+    f"{station_name}"
+)
+
+
+print(
+    f"Prediction Window: "
+    f"{prediction_window_minutes} minutes"
+)
+
+
+print(
+    f"Elevation Mask   : "
+    f"{elevation_mask_deg:.1f}°"
+)
+
+
+print(
+    f"Passes Detected  : "
+    f"{len(pass_results)}"
+)
+
+
+print(
+    "CSV File         : "
+    "output/pass_schedule.csv"
+)
+
+
+print("=" * 60)
+
+
+# ============================================================
+# ELEVATION PROFILE PLOT
+# ============================================================
 
 plot_elevation_profile(
     prediction_times,
@@ -364,49 +648,3 @@ plot_elevation_profile(
     pass_results,
     elevation_mask_deg
 )
-
-# --------------------------------------------------
-# EXPORT PASS SCHEDULE
-# --------------------------------------------------
-
-export_passes_to_csv(
-    pass_results,
-    "output/pass_schedule.csv",
-    iss.name,
-    station_name,
-    station_latitude,
-    station_longitude,
-    observation_time,
-    180,
-    iss.epoch
-)
-
-print("\n" + "=" * 60)
-print("PASS SCHEDULE EXPORT")
-print("=" * 60)
-
-print(
-    f"Satellite       : {iss.name}"
-)
-
-print(
-    f"Ground Station  : {station_name}"
-)
-
-print(
-    f"Prediction Window: 180 minutes"
-)
-
-print(
-    f"Elevation Mask   : {elevation_mask_deg:.1f}°"
-)
-
-print(
-    f"Passes Detected  : {len(pass_results)}"
-)
-
-print(
-    "CSV File         : output/pass_schedule.csv"
-)
-
-print("=" * 60)
