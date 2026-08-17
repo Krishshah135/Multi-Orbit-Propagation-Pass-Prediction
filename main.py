@@ -38,12 +38,18 @@ from src.pass_prediction import (
     plot_elevation_profile,
     export_passes_to_csv
 )
+from src.orbit_classification import (
+    classify_orbit
+)
 
+from src.orbit_validation import (
+    validate_orbital_parameters
+)
 # ============================================================
 # SATELLITE CONFIGURATION
 # ============================================================
 
-SELECTED_SATELLITE = 1
+SELECTED_SATELLITE = 2
 
 
 # ============================================================
@@ -81,7 +87,18 @@ satellite = select_satellite(
 analysis = analyze_orbit(
     satellite
 )
+orbit_classification = classify_orbit(
+    analysis["altitude_km"],
+    analysis["period_minutes"],
+    analysis["eccentricity"],
+    analysis["inclination_deg"]
+)
 
+orbit_validation = (
+    validate_orbital_parameters(
+        analysis
+    )
+)
 
 # ============================================================
 # DISPLAY ORBITAL ANALYSIS
@@ -141,6 +158,39 @@ print(
     f"Mean Motion        : "
     f"{analysis['mean_motion_rev_day']:.4f} rev/day"
 )
+
+print("\nORBIT VALIDATION")
+
+print("-" * 60)
+
+print(
+    f"Orbital Data Valid : "
+    f"{orbit_validation['valid']}"
+)
+
+if orbit_validation["warnings"]:
+
+    print("\nWarnings:")
+
+    for warning in (
+        orbit_validation["warnings"]
+    ):
+
+        print(
+            f"- {warning}"
+        )
+
+if orbit_validation["errors"]:
+
+    print("\nErrors:")
+
+    for error in (
+        orbit_validation["errors"]
+    ):
+
+        print(
+            f"- {error}"
+        )
 
 
 # ============================================================
@@ -223,7 +273,29 @@ print(
     f"{analysis['apogee_velocity_km_s']:.4f} km/s"
 )
 
+print("\nORBIT CLASSIFICATION")
 
+print("-" * 60)
+
+print(
+    f"Altitude Class     : "
+    f"{orbit_classification['altitude_class']}"
+)
+
+print(
+    f"Period Class       : "
+    f"{orbit_classification['period_class']}"
+)
+
+print(
+    f"Eccentricity Class : "
+    f"{orbit_classification['eccentricity_class']}"
+)
+
+print(
+    f"Inclination Class  : "
+    f"{orbit_classification['inclination_class']}"
+)
 print("=" * 60)
 
 
