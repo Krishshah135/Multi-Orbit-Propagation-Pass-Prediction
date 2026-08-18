@@ -45,11 +45,17 @@ from src.orbit_classification import (
 from src.orbit_validation import (
     validate_orbital_parameters
 )
+
+
+from src.satellite_profile import (
+    build_satellite_profile,
+    print_satellite_profile
+)
 # ============================================================
 # SATELLITE CONFIGURATION
 # ============================================================
 
-SELECTED_SATELLITE = 2
+SELECTED_SATELLITE = 1
 
 
 # ============================================================
@@ -100,6 +106,26 @@ orbit_validation = (
     )
 )
 
+# ============================================================
+# BUILD SATELLITE PROFILE
+# ============================================================
+
+satellite_profile = build_satellite_profile(
+    satellite,
+    analysis,
+    orbit_classification,
+    orbit_validation,
+    catalog[
+        satellite.name
+    ]["tle_file"]
+)
+# ============================================================
+# SATELLITE PROFILE
+# ============================================================
+
+print_satellite_profile(
+    satellite_profile
+)
 # ============================================================
 # DISPLAY ORBITAL ANALYSIS
 # ============================================================
@@ -159,14 +185,7 @@ print(
     f"{analysis['mean_motion_rev_day']:.4f} rev/day"
 )
 
-print("\nORBIT VALIDATION")
 
-print("-" * 60)
-
-print(
-    f"Orbital Data Valid : "
-    f"{orbit_validation['valid']}"
-)
 
 if orbit_validation["warnings"]:
 
@@ -272,32 +291,6 @@ print(
     f"Apogee Velocity    : "
     f"{analysis['apogee_velocity_km_s']:.4f} km/s"
 )
-
-print("\nORBIT CLASSIFICATION")
-
-print("-" * 60)
-
-print(
-    f"Altitude Class     : "
-    f"{orbit_classification['altitude_class']}"
-)
-
-print(
-    f"Period Class       : "
-    f"{orbit_classification['period_class']}"
-)
-
-print(
-    f"Eccentricity Class : "
-    f"{orbit_classification['eccentricity_class']}"
-)
-
-print(
-    f"Inclination Class  : "
-    f"{orbit_classification['inclination_class']}"
-)
-print("=" * 60)
-
 
 # ============================================================
 # SKYFIELD TIMESCALE

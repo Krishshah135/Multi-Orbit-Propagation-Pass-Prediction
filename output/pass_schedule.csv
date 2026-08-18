@@ -1,2 +1,2 @@
 Satellite,Ground Station,Station Latitude (deg),Station Longitude (deg),Prediction Start (UTC),Prediction Window (min),TLE Epoch (UTC),AOS (UTC),Maximum Elevation (deg),Maximum Elevation Time (UTC),LOS (UTC),Duration (min),Elevation Mask (deg)
-Satellite: NOAA19,Chennai,13.082700,80.270700,2026-08-17 15:07:21,720,2026-08-16 22:14:32,2026-08-17 16:53:53,69.08,2026-08-17 16:59:22,2026-08-17 17:04:52,10.99,10.00
+Satellite: ISS (ZARYA),Chennai,13.082700,80.270700,2026-08-18 03:07:28,720,2026-08-10 19:50:40,2026-08-18 08:04:14,32.36,2026-08-18 08:07:17,2026-08-18 08:10:20,6.09,10.00
