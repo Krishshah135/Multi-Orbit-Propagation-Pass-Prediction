@@ -51,6 +51,17 @@ from src.satellite_profile import (
     build_satellite_profile,
     print_satellite_profile
 )
+
+from src.prediction_config import (
+    create_prediction_config,
+    print_prediction_config
+)
+
+from src.prediction_report import (
+    build_prediction_report,
+    print_prediction_report
+)
+
 # ============================================================
 # SATELLITE CONFIGURATION
 # ============================================================
@@ -535,27 +546,33 @@ print(
 
 
 # ============================================================
-# PASS PREDICTION CONFIGURATION
+# PREDICTION CONFIGURATION
 # ============================================================
 
-prediction_window_minutes = 720
+prediction_config = create_prediction_config(
+    duration_minutes=180,
+    step_seconds=10,
+    elevation_mask_deg=10.0
+)
 
-prediction_step_seconds = 10
-
-elevation_mask_deg = 10.0
-
-
-# ============================================================
-# GENERATE PREDICTION TIMES
-# ============================================================
+print_prediction_config(
+    prediction_config
+)
 
 prediction_times = generate_prediction_times(
     ts,
     observation_time,
-    duration_minutes=prediction_window_minutes,
-    step_seconds=prediction_step_seconds
+    duration_minutes=(
+        prediction_config[
+            "duration_minutes"
+        ]
+    ),
+    step_seconds=(
+        prediction_config[
+            "step_seconds"
+        ]
+    )
 )
-
 
 # ============================================================
 # CALCULATE ELEVATION PROFILE
@@ -577,13 +594,18 @@ elevations = calculate_elevation_profile(
 visibility_intervals = find_visibility_intervals(
     prediction_times,
     elevations,
-    elevation_mask_deg=elevation_mask_deg
+    elevation_mask_deg=(
+        prediction_config[
+            "elevation_mask_deg"
+        ]
+    )
 )
 
 
 # ============================================================
 # BUILD STRUCTURED PASS RESULTS
 # ============================================================
+
 
 pass_results = build_pass_results(
     ts,
@@ -594,9 +616,26 @@ pass_results = build_pass_results(
     prediction_times,
     elevations,
     visibility_intervals,
-    elevation_mask_deg
+    prediction_config[
+        "elevation_mask_deg"
+    ]
 )
+# ============================================================
+# BUILD PREDICTION REPORT
+# ============================================================
 
+prediction_report = (
+    build_prediction_report(
+        pass_results
+    )
+)
+# ============================================================
+# DISPLAY PREDICTION REPORT
+# ============================================================
+
+print_prediction_report(
+    prediction_report
+)
 
 # ============================================================
 # PASS PREDICTION SUMMARY
@@ -609,13 +648,13 @@ print("-" * 60)
 
 print(
     f"Prediction window : "
-    f"{prediction_window_minutes} minutes"
+    f"{prediction_config['duration_minutes']} minutes"
 )
 
 
 print(
     f"Elevation mask    : "
-    f"{elevation_mask_deg:.1f}°"
+    f"{prediction_config['elevation_mask_deg']:.1f}°"
 )
 
 
@@ -646,7 +685,15 @@ export_passes_to_csv(
     station_latitude,
     station_longitude,
     observation_time,
-    prediction_window_minutes,
+    prediction_config[
+        "duration_minutes"
+    ],
+    prediction_config[
+        "step_seconds"
+    ],
+    prediction_config[
+        "elevation_mask_deg"
+    ],
     satellite.epoch
 )
 
@@ -678,13 +725,13 @@ print(
 
 print(
     f"Prediction Window: "
-    f"{prediction_window_minutes} minutes"
+    f"{prediction_config['duration_minutes']} minutes"
 )
 
 
 print(
-    f"Elevation Mask   : "
-    f"{elevation_mask_deg:.1f}°"
+    f"Prediction Window: "
+    f"{prediction_config['duration_minutes']} minutes"
 )
 
 
@@ -711,5 +758,7 @@ plot_elevation_profile(
     prediction_times,
     elevations,
     pass_results,
-    elevation_mask_deg
+    prediction_config[
+        "elevation_mask_deg"
+    ]
 )

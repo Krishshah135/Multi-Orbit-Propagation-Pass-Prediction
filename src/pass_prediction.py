@@ -750,16 +750,20 @@ def plot_elevation_profile(
 
     plt.show()
 
+
+
 def export_passes_to_csv(
     pass_results,
     filename,
     satellite_name,
     station_name,
-    station_latitude_deg,
-    station_longitude_deg,
-    prediction_start_time,
+    station_latitude,
+    station_longitude,
+    observation_time,
     prediction_window_minutes,
-    tle_epoch
+    prediction_step_seconds,
+    elevation_mask_deg,
+    satellite_epoch
 ):
     """
     Export predicted satellite passes
@@ -793,7 +797,19 @@ def export_passes_to_csv(
     ) as file:
 
         writer = csv.writer(file)
+        writer.writerow(
+            [
+                "Prediction Step (seconds)",
+                    prediction_step_seconds
+            ]
+        )
 
+        writer.writerow(
+            [
+                "Elevation Mask (deg)",
+                elevation_mask_deg
+            ]
+        )
         # --------------------------------------------------
         # CSV header
         # --------------------------------------------------
