@@ -62,12 +62,23 @@ from src.prediction_report import (
     print_prediction_report
 )
 
+from src.multi_satellite_prediction import (
+    predict_all_satellites
+)
+
+from src.mission_schedule import (
+    build_combined_schedule,
+    print_combined_schedule,
+    export_combined_schedule
+)
+
+
 # ============================================================
 # SATELLITE CONFIGURATION
 # ============================================================
 
 SELECTED_SATELLITE = 1
-
+RUN_ALL_SATELLITES = True
 
 # ============================================================
 # SATELLITE CATALOG
@@ -550,7 +561,7 @@ print(
 # ============================================================
 
 prediction_config = create_prediction_config(
-    duration_minutes=180,
+    duration_minutes=720,
     step_seconds=10,
     elevation_mask_deg=10.0
 )
@@ -573,6 +584,138 @@ prediction_times = generate_prediction_times(
         ]
     )
 )
+
+# ============================================================
+# MULTI-SATELLITE PREDICTION
+# ============================================================
+
+if RUN_ALL_SATELLITES:
+
+    print(
+        "\n" + "=" * 60
+    )
+
+    print(
+        "        MULTI-SATELLITE PREDICTION"
+    )
+
+    print(
+        "=" * 60
+    )
+
+    all_predictions = (
+        predict_all_satellites(
+            ts,
+            catalog,
+            station,
+            station_latitude,
+            station_longitude,
+            observation_time,
+            prediction_config
+        )
+    )
+
+        # ========================================================
+    # BUILD COMBINED MISSION SCHEDULE
+    # ========================================================
+
+    combined_schedule = (
+        build_combined_schedule(
+            all_predictions
+        )
+    )
+
+
+    # ========================================================
+    # DISPLAY COMBINED MISSION SCHEDULE
+    # ========================================================
+
+    print_combined_schedule(
+        combined_schedule
+    )
+
+        # ========================================================
+    # EXPORT COMBINED MISSION SCHEDULE
+    # ========================================================
+
+    export_combined_schedule(
+        combined_schedule,
+        "output/combined_mission_schedule.csv",
+        station_name,
+        station_latitude,
+        station_longitude,
+        observation_time,
+        prediction_config[
+            "duration_minutes"
+        ],
+        prediction_config[
+            "step_seconds"
+        ],
+        prediction_config[
+            "elevation_mask_deg"
+        ]
+    )
+
+    print(
+        "\nCombined mission schedule exported to:"
+    )
+
+    print(
+        "output/combined_mission_schedule.csv"
+    )
+
+if RUN_ALL_SATELLITES:
+
+    print(
+        "\n" + "=" * 60
+    )
+
+    print(
+        "        MULTI-SATELLITE SUMMARY"
+    )
+
+    print(
+        "=" * 60
+    )
+
+    for satellite_name, prediction in (
+        all_predictions.items()
+    ):
+
+        report = (
+            prediction[
+                "prediction_report"
+            ]
+        )
+
+        print(
+            f"\nSatellite : "
+            f"{satellite_name}"
+        )
+
+        print(
+            f"Passes    : "
+            f"{report['total_passes']}"
+        )
+
+        if (
+            report["best_pass"]
+            is not None
+        ):
+
+            print(
+                f"Best Max Elevation : "
+                f"{report['best_pass'].max_elevation_deg:.2f}°"
+            )
+
+        else:
+
+            print(
+                "Best Max Elevation : "
+                "No visible pass"
+            )
+
+
 
 # ============================================================
 # CALCULATE ELEVATION PROFILE

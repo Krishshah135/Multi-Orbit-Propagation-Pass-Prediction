@@ -1,0 +1,10 @@
+Ground Station,Chennai
+Station Latitude (deg),13.0827
+Station Longitude (deg),80.2707
+Prediction Start,2026-08-19 00:00:00 UTC
+Prediction Window (minutes),720
+Prediction Step (seconds),10
+Elevation Mask (deg),10.0
+
+AOS,Satellite,Maximum Elevation (deg),Maximum Elevation Time,LOS,Duration (minutes),Elevation Mask (deg)
+2026-08-19 00:00:00 UTC,ISS (ZARYA),65.00,2026-08-19 00:00:00 UTC,2026-08-19 00:00:00 UTC,8.00,10.00

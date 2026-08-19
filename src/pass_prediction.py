@@ -851,13 +851,13 @@ def export_passes_to_csv(
             )
 
             prediction_start = (
-                prediction_start_time.utc_strftime(
+                observation_time.utc_strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
             )
 
             tle_epoch_string = (
-                tle_epoch.utc_strftime(
+                satellite_epoch.utc_strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
             )
@@ -865,8 +865,8 @@ def export_passes_to_csv(
             writer.writerow([
                 satellite_name,
                 station_name,
-                f"{station_latitude_deg:.6f}",
-                f"{station_longitude_deg:.6f}",
+                f"{station_latitude:.6f}",
+                f"{station_longitude:.6f}",
                 prediction_start,
                 prediction_window_minutes,
                 tle_epoch_string,

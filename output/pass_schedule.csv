@@ -1,3 +1,4 @@
 Prediction Step (seconds),10
 Elevation Mask (deg),10.0
 Satellite,Ground Station,Station Latitude (deg),Station Longitude (deg),Prediction Start (UTC),Prediction Window (min),TLE Epoch (UTC),AOS (UTC),Maximum Elevation (deg),Maximum Elevation Time (UTC),LOS (UTC),Duration (min),Elevation Mask (deg)
+Satellite: ISS (ZARYA),Chennai,13.082700,80.270700,2026-08-19 01:15:06,720,2026-08-10 19:50:40,2026-08-19 07:16:07,82.07,2026-08-19 07:19:27,2026-08-19 07:22:49,6.69,10.00

@@ -11,27 +11,57 @@ from src.prediction_report import (
 test_passes = [
 
     {
+        "satellite_name": "ISS (ZARYA)",
+
         "max_elevation_deg": 25.0,
-        "duration_seconds": 300,
+
+        "duration_minutes": 5.0,
+
         "aos_time": "2026-08-18 10:00:00 UTC",
-        "max_elevation_time": "2026-08-18 10:02:30 UTC",
-        "los_time": "2026-08-18 10:05:00 UTC"
+
+        "max_elevation_time":
+            "2026-08-18 10:02:30 UTC",
+
+        "los_time":
+            "2026-08-18 10:05:00 UTC",
+
+        "elevation_mask_deg": 10.0
     },
 
     {
+        "satellite_name": "ISS (ZARYA)",
+
         "max_elevation_deg": 65.0,
-        "duration_seconds": 480,
+
+        "duration_minutes": 8.0,
+
         "aos_time": "2026-08-18 11:00:00 UTC",
-        "max_elevation_time": "2026-08-18 11:04:00 UTC",
-        "los_time": "2026-08-18 11:08:00 UTC"
+
+        "max_elevation_time":
+            "2026-08-18 11:04:00 UTC",
+
+        "los_time":
+            "2026-08-18 11:08:00 UTC",
+
+        "elevation_mask_deg": 10.0
     },
 
     {
+        "satellite_name": "ISS (ZARYA)",
+
         "max_elevation_deg": 40.0,
-        "duration_seconds": 240,
+
+        "duration_minutes": 4.0,
+
         "aos_time": "2026-08-18 12:00:00 UTC",
-        "max_elevation_time": "2026-08-18 12:02:00 UTC",
-        "los_time": "2026-08-18 12:04:00 UTC"
+
+        "max_elevation_time":
+            "2026-08-18 12:02:00 UTC",
+
+        "los_time":
+            "2026-08-18 12:04:00 UTC",
+
+        "elevation_mask_deg": 10.0
     }
 ]
 
@@ -81,8 +111,8 @@ assert (
 
 assert (
     report["longest_pass"]
-    ["duration_seconds"]
-    == 480
+    ["duration_minutes"]
+    == 8.0
 )
 
 
@@ -91,9 +121,8 @@ assert (
 # ============================================================
 
 expected_average = (
-    (300 + 480 + 240)
+    (5.0 + 8.0 + 4.0)
     / 3
-    / 60
 )
 
 assert (

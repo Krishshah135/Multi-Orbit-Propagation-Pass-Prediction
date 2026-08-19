@@ -3,6 +3,31 @@
 # ============================================================
 
 
+def _get_pass_value(
+    pass_result,
+    field_name
+):
+    """
+    Read a value from either a PassResult object
+    or a dictionary.
+    """
+
+    if isinstance(
+        pass_result,
+        dict
+    ):
+        return pass_result[field_name]
+
+    return getattr(
+        pass_result,
+        field_name
+    )
+
+
+# ============================================================
+# BUILD PREDICTION REPORT
+# ============================================================
+
 def build_prediction_report(
     pass_results
 ):
@@ -12,7 +37,7 @@ def build_prediction_report(
     """
 
     # --------------------------------------------------------
-    # Handle no-pass condition
+    # No-pass condition
     # --------------------------------------------------------
 
     if not pass_results:
@@ -34,51 +59,56 @@ def build_prediction_report(
     )
 
     # --------------------------------------------------------
-    # Find highest-elevation pass
+    # Highest elevation pass
     # --------------------------------------------------------
 
     highest_elevation_pass = max(
         pass_results,
         key=lambda result:
-            result["max_elevation_deg"]
+            _get_pass_value(
+                result,
+                "max_elevation_deg"
+            )
     )
 
     # --------------------------------------------------------
-    # Find longest pass
+    # Longest pass
     # --------------------------------------------------------
 
     longest_pass = max(
         pass_results,
         key=lambda result:
-            result["duration_seconds"]
+            _get_pass_value(
+                result,
+                "duration_minutes"
+            )
     )
 
     # --------------------------------------------------------
-    # Calculate average duration
+    # Average duration
     # --------------------------------------------------------
 
-    total_duration_seconds = sum(
-        result["duration_seconds"]
+    total_duration_minutes = sum(
+        _get_pass_value(
+            result,
+            "duration_minutes"
+        )
         for result in pass_results
     )
 
     average_duration_minutes = (
-        total_duration_seconds
+        total_duration_minutes
         / total_passes
-        / 60
     )
 
     # --------------------------------------------------------
     # Best pass
-    #
-    # For now, highest maximum elevation
-    # is our definition of "best".
     # --------------------------------------------------------
 
     best_pass = highest_elevation_pass
 
     # --------------------------------------------------------
-    # Return structured report
+    # Return report
     # --------------------------------------------------------
 
     return {
@@ -98,6 +128,10 @@ def build_prediction_report(
             average_duration_minutes
     }
 
+
+# ============================================================
+# PRINT PREDICTION REPORT
+# ============================================================
 
 def print_prediction_report(
     report
@@ -168,28 +202,33 @@ def print_prediction_report(
     )
 
     print(
+        f"Satellite            : "
+        f"{_get_pass_value(best_pass, 'satellite_name')}"
+    )
+
+    print(
         f"Maximum Elevation    : "
-        f"{best_pass['max_elevation_deg']:.2f}°"
+        f"{_get_pass_value(best_pass, 'max_elevation_deg'):.2f}°"
     )
 
     print(
         f"Duration             : "
-        f"{best_pass['duration_seconds'] / 60:.2f} minutes"
+        f"{_get_pass_value(best_pass, 'duration_minutes'):.2f} minutes"
     )
 
     print(
         f"AOS                  : "
-        f"{best_pass['aos_time']}"
+        f"{_get_pass_value(best_pass, 'aos_time')}"
     )
 
     print(
         f"MAX                  : "
-        f"{best_pass['max_elevation_time']}"
+        f"{_get_pass_value(best_pass, 'max_elevation_time')}"
     )
 
     print(
         f"LOS                  : "
-        f"{best_pass['los_time']}"
+        f"{_get_pass_value(best_pass, 'los_time')}"
     )
 
     # --------------------------------------------------------
@@ -209,13 +248,18 @@ def print_prediction_report(
     )
 
     print(
+        f"Satellite            : "
+        f"{_get_pass_value(longest_pass, 'satellite_name')}"
+    )
+
+    print(
         f"Duration             : "
-        f"{longest_pass['duration_seconds'] / 60:.2f} minutes"
+        f"{_get_pass_value(longest_pass, 'duration_minutes'):.2f} minutes"
     )
 
     print(
         f"Maximum Elevation    : "
-        f"{longest_pass['max_elevation_deg']:.2f}°"
+        f"{_get_pass_value(longest_pass, 'max_elevation_deg'):.2f}°"
     )
 
     print(
