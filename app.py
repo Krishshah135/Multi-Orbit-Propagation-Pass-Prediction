@@ -501,14 +501,95 @@ selected_satellites = (
 # GROUND STATION
 # ============================================================
 
-station_name = (
-    st.sidebar.selectbox(
-        "Ground Station",
-        list(
-            GROUND_STATIONS.keys()
-        ),
-    )
+# ============================================================
+# GROUND STATION / CUSTOM LOCATION
+# ============================================================
+
+st.sidebar.subheader("📍 Observer Location")
+
+location_mode = st.sidebar.radio(
+    "Location Mode",
+    [
+        "Predefined Ground Station",
+        "Custom Location",
+    ],
 )
+
+
+if location_mode == "Predefined Ground Station":
+
+    station_name = st.sidebar.selectbox(
+        "Ground Station",
+        list(GROUND_STATIONS.keys()),
+    )
+
+    station_data = GROUND_STATIONS[
+        station_name
+    ]
+
+    station_latitude = station_data[
+        "latitude"
+    ]
+
+    station_longitude = station_data[
+        "longitude"
+    ]
+
+    station_elevation = station_data[
+        "elevation"
+    ]
+
+
+else:
+
+    custom_location_name = (
+        st.sidebar.text_input(
+            "Location Name",
+            value="Custom Location",
+        )
+    )
+
+    station_latitude = (
+        st.sidebar.number_input(
+            "Latitude (°)",
+            min_value=-90.0,
+            max_value=90.0,
+            value=0.0,
+            step=0.0001,
+            format="%.4f",
+        )
+    )
+
+    station_longitude = (
+        st.sidebar.number_input(
+            "Longitude (°)",
+            min_value=-180.0,
+            max_value=180.0,
+            value=0.0,
+            step=0.0001,
+            format="%.4f",
+        )
+    )
+
+    station_elevation = (
+        st.sidebar.number_input(
+            "Elevation (m)",
+            min_value=0.0,
+            max_value=10000.0,
+            value=0.0,
+            step=1.0,
+        )
+    )
+
+    station_name = (
+        custom_location_name.strip()
+    )
+
+    if not station_name:
+
+        station_name = (
+            "Custom Location"
+        )
 
 
 # ============================================================
@@ -586,19 +667,20 @@ selected_satellite_objects = [
 # MISSION OVERVIEW
 # ============================================================
 
+
 st.subheader(
     "Mission Overview"
 )
 
-col1, col2, col3 = (
-    st.columns(3)
+col1, col2, col3, col4 = (
+    st.columns(4)
 )
 
 
 with col1:
 
     st.metric(
-        "Ground Station",
+        "Observer Location",
         station_name,
     )
 
@@ -606,18 +688,25 @@ with col1:
 with col2:
 
     st.metric(
-        "Prediction Window",
-        f"{prediction_window} min",
+        "Latitude",
+        f"{station_latitude:.4f}°",
     )
 
 
 with col3:
 
     st.metric(
-        "Elevation Mask",
-        f"{elevation_mask:.1f}°",
+        "Longitude",
+        f"{station_longitude:.4f}°",
     )
 
+
+with col4:
+
+    st.metric(
+        "Prediction Window",
+        f"{prediction_window} min",
+    )
 
 # ============================================================
 # SELECTED SATELLITES
@@ -653,29 +742,9 @@ if run_prediction:
     # GROUND STATION
     # --------------------------------------------------------
 
-    station_data = (
-        GROUND_STATIONS[
-            station_name
-        ]
-    )
-
-    station_latitude = (
-        station_data[
-            "latitude"
-        ]
-    )
-
-    station_longitude = (
-        station_data[
-            "longitude"
-        ]
-    )
-
-    station_elevation = (
-        station_data[
-            "elevation"
-        ]
-    )
+    # ============================================================
+    # CREATE SELECTED OBSERVER STATION
+    # ============================================================
 
     station = create_ground_station(
         station_latitude,
@@ -890,6 +959,21 @@ if run_prediction:
         "station":
             station_name,
 
+        "latitude":
+            float(
+                station_latitude
+            ),
+
+        "longitude":
+            float(
+                station_longitude
+            ),
+
+        "elevation":
+            float(
+                station_elevation
+            ),
+
         "prediction_window":
             int(
                 prediction_window
@@ -903,6 +987,8 @@ if run_prediction:
         "observation_time":
             observation_time,
     }
+
+        
 
     st.session_state.prediction_completed = (
         True
@@ -1412,8 +1498,14 @@ if (
     )
 
     st.write(
-        f"**Ground Station:** "
+        f"**Observer Location:** "
         f"{last_config['station']}"
+    )
+
+    st.write(
+        f"**Coordinates:** "
+        f"{last_config['latitude']:.4f}°, "
+        f"{last_config['longitude']:.4f}°"
     )
 
     st.write(
