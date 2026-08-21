@@ -69,7 +69,10 @@ from src.multi_satellite_prediction import (
 from src.mission_schedule import (
     build_combined_schedule,
     print_combined_schedule,
-    export_combined_schedule
+    export_combined_schedule,
+    find_next_upcoming_pass,
+    rank_passes_by_elevation,
+    print_pass_ranking
 )
 
 
@@ -634,7 +637,102 @@ if RUN_ALL_SATELLITES:
         combined_schedule
     )
 
-        # ========================================================
+    # ========================================================
+    # FIND NEXT UPCOMING PASS
+    # ========================================================
+    next_pass = (
+        find_next_upcoming_pass(
+            combined_schedule,
+            observation_time
+        )
+    )
+
+
+    # ========================================================
+    # DISPLAY NEXT UPCOMING PASS
+    # ========================================================
+
+    print(
+        "\n" + "=" * 60
+    )
+
+    print(
+        "              NEXT UPCOMING PASS"
+    )
+
+    print(
+        "=" * 60
+    )
+
+
+    if next_pass is None:
+
+        print(
+            "\nNo upcoming satellite passes "
+            "found in the prediction window."
+        )
+
+    else:
+
+        print(
+            f"\nSatellite          : "
+            f"{next_pass.satellite_name}"
+        )
+
+        print(
+            f"AOS                : "
+            f"{next_pass.aos_time.utc_strftime(
+                '%Y-%m-%d %H:%M:%S UTC'
+            )}"
+        )
+
+        print(
+            f"Maximum Elevation  : "
+            f"{next_pass.max_elevation_deg:.2f}°"
+        )
+
+        print(
+            f"MAX Time           : "
+            f"{next_pass.max_elevation_time.utc_strftime(
+                '%Y-%m-%d %H:%M:%S UTC'
+            )}"
+        )
+
+        print(
+            f"LOS                : "
+            f"{next_pass.los_time.utc_strftime(
+                '%Y-%m-%d %H:%M:%S UTC'
+            )}"
+        )
+
+        print(
+            f"Duration           : "
+            f"{next_pass.duration_minutes:.2f} minutes"
+        )
+
+    print(
+        "=" * 60
+    )
+
+    # ========================================================
+    # RANK PASSES BY MAXIMUM ELEVATION
+    # ========================================================
+
+    ranked_passes = (
+        rank_passes_by_elevation(
+            combined_schedule
+        )
+    )
+
+
+    # ========================================================
+    # DISPLAY PASS RANKING
+    # ========================================================
+
+    print_pass_ranking(
+        ranked_passes
+    )
+    # ========================================================
     # EXPORT COMBINED MISSION SCHEDULE
     # ========================================================
 
